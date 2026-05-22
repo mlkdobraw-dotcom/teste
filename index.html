@@ -342,21 +342,11 @@ function placeInitialPieces(){
         "freddy"
     ];
 
-    const blueThird = [
-        "aluno","aluno","freddy","aluno","aluno",
-        "aluno","aluno","freddy","aluno","aluno"
-    ];
 
-    for(let x=0;x<10;x++){
-        board[0][x] = createPiece(blueBack[x],"blue");
-    }
+    
 
     for(let x=0;x<10;x++){
         board[1][x] = createPiece("aluno","blue");
-    }
-
-    for(let x=0;x<10;x++){
-        board[2][x] = createPiece(blueThird[x],"blue");
     }
 
     // VERMELHO (base)
@@ -374,21 +364,9 @@ function placeInitialPieces(){
         "freddy"
     ];
 
-    const redThird = [
-        "aluno","aluno","freddy","aluno","aluno",
-        "aluno","aluno","freddy","aluno","aluno"
-    ];
-
-    for(let x=0;x<10;x++){
-        board[9][x] = createPiece(redBack[x],"red");
-    }
 
     for(let x=0;x<10;x++){
         board[8][x] = createPiece("aluno","red");
-    }
-
-    for(let x=0;x<10;x++){
-        board[7][x] = createPiece(redThird[x],"red");
     }
 }
 
