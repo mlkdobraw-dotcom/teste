@@ -1,10 +1,924 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet" href="css/estiloGeral.css">
-        <title>Visual Studio</title>
-    </head>
-    <body>
-        <h1>Oi Daniel</h1>
-    </body>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Xadrez Escolar: O Domínio da Cantina</title>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:Arial, Helvetica, sans-serif;
+    }
+
+    body{
+        background:#102030;
+        color:white;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        min-height:100vh;
+        padding:20px;
+    }
+
+    h1{
+        margin-bottom:15px;
+        text-align:center;
+        color:#ffffff;
+    }
+
+    .game-container{
+        display:flex;
+        gap:20px;
+        flex-wrap:wrap;
+        justify-content:center;
+        width:100%;
+        max-width:1400px;
+    }
+
+    .board{
+        display:grid;
+        grid-template-columns:repeat(10, 65px);
+        grid-template-rows:repeat(10, 65px);
+        border:4px solid #1f2f46;
+        box-shadow:0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .cell{
+        width:65px;
+        height:65px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:12px;
+        font-weight:bold;
+        cursor:pointer;
+        user-select:none;
+        position:relative;
+        transition:0.2s;
+    }
+
+    .light{
+        background:#dce3ec;
+        color:#111;
+    }
+
+    .dark{
+        background:#7d8fa3;
+        color:#111;
+    }
+
+    .cell.highlight{
+        box-shadow: inset 0 0 0 4px #ffe066;
+    }
+
+    .cell.move::after{
+        content:"";
+        width:18px;
+        height:18px;
+        border-radius:50%;
+        background:rgba(0,255,120,0.7);
+        position:absolute;
+    }
+
+    .piece{
+        width:90%;
+        height:90%;
+        border-radius:12px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        padding:4px;
+        font-size:11px;
+        color:white;
+        border:2px solid rgba(255,255,255,0.4);
+        z-index:2;
+    }
+
+    .red{
+        background:#d94141;
+    }
+
+    .blue{
+        background:#3c6ee8;
+    }
+
+    .side-panel{
+        width:320px;
+        background:#182838;
+        padding:20px;
+        border-radius:14px;
+        display:flex;
+        flex-direction:column;
+        gap:18px;
+        box-shadow:0 0 20px rgba(0,0,0,0.4);
+    }
+
+    .info-box{
+        background:#22364a;
+        padding:12px;
+        border-radius:10px;
+    }
+
+    .turn{
+        font-size:22px;
+        font-weight:bold;
+    }
+
+    .cards{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+    }
+
+    .card{
+        background:#2c4661;
+        padding:10px;
+        border-radius:10px;
+        border:2px solid transparent;
+        cursor:pointer;
+        transition:0.2s;
+    }
+
+    .card:hover{
+        transform:scale(1.03);
+        border-color:#ffe066;
+    }
+
+    .active-card{
+        border-color:#00ff88;
+    }
+
+    button{
+        padding:12px;
+        border:none;
+        border-radius:10px;
+        cursor:pointer;
+        background:#3c6ee8;
+        color:white;
+        font-weight:bold;
+        transition:0.2s;
+    }
+
+    button:hover{
+        background:#5d89f0;
+    }
+
+    #message{
+        margin-top:15px;
+        font-size:20px;
+        font-weight:bold;
+        color:#ffe066;
+        text-align:center;
+        min-height:24px;
+    }
+
+    @media(max-width:950px){
+        .board{
+            grid-template-columns:repeat(10, 48px);
+            grid-template-rows:repeat(10, 48px);
+        }
+
+        .cell{
+            width:48px;
+            height:48px;
+            font-size:9px;
+        }
+
+        .piece{
+            font-size:8px;
+        }
+
+        .side-panel{
+            width:100%;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Xadrez Escolar: O Domínio da Cantina</h1>
+
+<div class="game-container">
+
+    <div id="board" class="board"></div>
+
+    <div class="side-panel">
+
+        <div class="info-box">
+            <div class="turn" id="turnDisplay">Turno: Vermelho</div>
+        </div>
+
+        <div class="info-box">
+            <h3>Pontuação</h3>
+            <p>🔴 Vermelho: <span id="redScore">0</span></p>
+            <p>🔵 Azul: <span id="blueScore">0</span></p>
+        </div>
+
+        <div class="info-box">
+            <h3>Cartas do Vermelho</h3>
+            <div id="redCards" class="cards"></div>
+        </div>
+
+        <div class="info-box">
+            <h3>Cartas do Azul</h3>
+            <div id="blueCards" class="cards"></div>
+        </div>
+
+        <button onclick="restartGame()">Reiniciar Partida</button>
+
+        <div id="message"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+const boardElement = document.getElementById("board");
+
+const SIZE = 10;
+
+let board = [];
+
+let currentPlayer = "red";
+
+let selectedPiece = null;
+
+let validMoves = [];
+
+let gameOver = false;
+
+let activeCard = null;
+
+let scores = {
+    red:0,
+    blue:0
+};
+
+let captured100 = {
+    red:0,
+    blue:0
+};
+
+let inventories = {
+    red:[],
+    blue:[]
+};
+
+const CARD_TYPES = [
+    "Estudar até o MB",
+    "Recuperação",
+    "Pão com Pasta"
+];
+
+const PIECES = {
+    aluno:{
+        name:"Aluno",
+        value:1,
+        short:"AL"
+    },
+    substituto:{
+        name:"Substituto",
+        value:3,
+        short:"SU"
+    },
+    professor:{
+        name:"Professor",
+        value:3,
+        short:"PR"
+    },
+    freddy:{
+        name:"Freddy",
+        value:5,
+        short:"FR"
+    },
+    diretor:{
+        name:"Diretor",
+        value:10,
+        short:"DI"
+    },
+    tia:{
+        name:"Tia",
+        value:100,
+        short:"TI"
+    },
+    moco:{
+        name:"Moço",
+        value:100,
+        short:"MO"
+    }
+};
+
+function createEmptyBoard(){
+    board = [];
+    for(let y=0;y<SIZE;y++){
+        const row = [];
+        for(let x=0;x<SIZE;x++){
+            row.push(null);
+        }
+        board.push(row);
+    }
+}
+
+function placeInitialPieces(){
+
+    // AZUL (topo)
+
+    const blueBack = [
+        "freddy",
+        "substituto",
+        "professor",
+        "diretor",
+        "tia",
+        "moco",
+        "diretor",
+        "professor",
+        "substituto",
+        "freddy"
+    ];
+
+    const blueThird = [
+        "aluno","aluno","freddy","aluno","aluno",
+        "aluno","aluno","freddy","aluno","aluno"
+    ];
+
+    for(let x=0;x<10;x++){
+        board[0][x] = createPiece(blueBack[x],"blue");
+    }
+
+    for(let x=0;x<10;x++){
+        board[1][x] = createPiece("aluno","blue");
+    }
+
+    for(let x=0;x<10;x++){
+        board[2][x] = createPiece(blueThird[x],"blue");
+    }
+
+    // VERMELHO (base)
+
+    const redBack = [
+        "freddy",
+        "substituto",
+        "professor",
+        "diretor",
+        "tia",
+        "moco",
+        "diretor",
+        "professor",
+        "substituto",
+        "freddy"
+    ];
+
+    const redThird = [
+        "aluno","aluno","freddy","aluno","aluno",
+        "aluno","aluno","freddy","aluno","aluno"
+    ];
+
+    for(let x=0;x<10;x++){
+        board[9][x] = createPiece(redBack[x],"red");
+    }
+
+    for(let x=0;x<10;x++){
+        board[8][x] = createPiece("aluno","red");
+    }
+
+    for(let x=0;x<10;x++){
+        board[7][x] = createPiece(redThird[x],"red");
+    }
+}
+
+function createPiece(type,color){
+    return {
+        type,
+        color,
+        ...PIECES[type],
+        moved:false
+    };
+}
+
+function renderBoard(){
+
+    boardElement.innerHTML = "";
+
+    for(let y=0;y<SIZE;y++){
+
+        for(let x=0;x<SIZE;x++){
+
+            const cell = document.createElement("div");
+
+            cell.classList.add("cell");
+
+            if((x+y)%2===0){
+                cell.classList.add("light");
+            }else{
+                cell.classList.add("dark");
+            }
+
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+
+            const piece = board[y][x];
+
+            if(selectedPiece &&
+               selectedPiece.x===x &&
+               selectedPiece.y===y){
+                cell.classList.add("highlight");
+            }
+
+            if(validMoves.some(m=>m.x===x && m.y===y)){
+                cell.classList.add("move");
+            }
+
+            if(piece){
+
+                const pieceDiv = document.createElement("div");
+
+                pieceDiv.classList.add("piece");
+                pieceDiv.classList.add(piece.color);
+
+                pieceDiv.innerHTML =
+                    `${piece.short}<br>${piece.name}`;
+
+                cell.appendChild(pieceDiv);
+            }
+
+            cell.addEventListener("click", ()=>handleCellClick(x,y));
+
+            boardElement.appendChild(cell);
+        }
+    }
+
+    updateUI();
+}
+
+function updateUI(){
+
+    document.getElementById("turnDisplay").innerText =
+        `Turno: ${currentPlayer==="red" ? "Vermelho" : "Azul"}`;
+
+    document.getElementById("redScore").innerText = scores.red;
+    document.getElementById("blueScore").innerText = scores.blue;
+
+    renderCards();
+}
+
+function renderCards(){
+
+    const redCards = document.getElementById("redCards");
+    const blueCards = document.getElementById("blueCards");
+
+    redCards.innerHTML = "";
+    blueCards.innerHTML = "";
+
+    inventories.red.forEach((card,index)=>{
+        const div = createCardElement(card,index,"red");
+        redCards.appendChild(div);
+    });
+
+    inventories.blue.forEach((card,index)=>{
+        const div = createCardElement(card,index,"blue");
+        blueCards.appendChild(div);
+    });
+}
+
+function createCardElement(card,index,owner){
+
+    const div = document.createElement("div");
+
+    div.classList.add("card");
+
+    if(activeCard &&
+       activeCard.owner===owner &&
+       activeCard.index===index){
+        div.classList.add("active-card");
+    }
+
+    div.innerHTML = `
+        <strong>${card}</strong>
+    `;
+
+    div.addEventListener("click", ()=>{
+
+        if(owner !== currentPlayer) return;
+        if(gameOver) return;
+
+        activeCard = {
+            name:card,
+            owner,
+            index
+        };
+
+        showMessage(`Carta ativada: ${card}`);
+
+        renderBoard();
+    });
+
+    return div;
+}
+
+function handleCellClick(x,y){
+
+    if(gameOver) return;
+
+    const piece = board[y][x];
+
+    // Recuperação
+    if(activeCard &&
+       activeCard.name==="Recuperação"){
+
+        if(!piece){
+
+            board[y][x] = createPiece("aluno",currentPlayer);
+
+            removeActiveCard();
+
+            endTurn();
+
+            return;
+        }
+    }
+
+    if(selectedPiece){
+
+        const move = validMoves.find(m=>m.x===x && m.y===y);
+
+        if(move){
+            movePiece(selectedPiece.x, selectedPiece.y, x, y, move);
+            return;
+        }
+    }
+
+    if(piece && piece.color===currentPlayer){
+
+        selectedPiece = {x,y};
+
+        validMoves = getValidMoves(x,y,piece);
+
+    }else{
+
+        selectedPiece = null;
+        validMoves = [];
+    }
+
+    renderBoard();
+}
+
+function getValidMoves(x,y,piece){
+
+    let moves = [];
+
+    // CARTA MB
+    if(activeCard &&
+       activeCard.name==="Estudar até o MB" &&
+       piece.type==="aluno" &&
+       piece.color===currentPlayer){
+
+        for(let dx=-3;dx<=3;dx++){
+            for(let dy=-3;dy<=3;dy++){
+
+                if(dx===0 && dy===0) continue;
+
+                const nx = x + dx;
+                const ny = y + dy;
+
+                if(inBounds(nx,ny)){
+
+                    const target = board[ny][nx];
+
+                    if(!target || target.color!==piece.color){
+                        moves.push({x:nx,y:ny});
+                    }
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    switch(piece.type){
+
+        case "aluno":
+            moves = alunoMoves(x,y,piece);
+            break;
+
+        case "substituto":
+            moves = substitutoMoves(x,y,piece);
+            break;
+
+        case "professor":
+            moves = professorMoves(x,y,piece);
+            break;
+
+        case "freddy":
+            moves = freddyMoves(x,y,piece);
+            break;
+
+        case "diretor":
+            moves = diretorMoves(x,y,piece);
+            break;
+
+        case "tia":
+        case "moco":
+            moves = queenMoves(x,y,piece);
+            break;
+    }
+
+    return moves;
+}
+
+function alunoMoves(x,y,piece){
+
+    const moves = [];
+
+    const dir = piece.color==="red" ? -1 : 1;
+
+    const ny = y + dir;
+
+    if(inBounds(x,ny)){
+
+        const target = board[ny][x];
+
+        if(!target || target.color!==piece.color){
+            moves.push({x,y:ny});
+        }
+    }
+
+    return moves;
+}
+
+function substitutoMoves(x,y,piece){
+
+    const moves = [];
+
+    for(let dx=-1;dx<=1;dx++){
+        for(let dy=-1;dy<=1;dy++){
+
+            if(dx===0 && dy===0) continue;
+
+            const nx = x+dx;
+            const ny = y+dy;
+
+            if(inBounds(nx,ny)){
+
+                const target = board[ny][nx];
+
+                if(!target || target.color!==piece.color){
+                    moves.push({x:nx,y:ny});
+                }
+            }
+        }
+    }
+
+    return moves;
+}
+
+function professorMoves(x,y,piece){
+
+    const moves = [];
+
+    const positions = [
+        {x,y:y+3},
+        {x,y:y-3}
+    ];
+
+    positions.forEach(p=>{
+
+        if(inBounds(p.x,p.y)){
+
+            const target = board[p.y][p.x];
+
+            if(!target || target.color!==piece.color){
+                moves.push(p);
+            }
+        }
+    });
+
+    return moves;
+}
+
+function freddyMoves(x,y,piece){
+
+    return lineMoves(x,y,piece,[
+        [1,0],
+        [-1,0]
+    ]);
+}
+
+function diretorMoves(x,y,piece){
+
+    return lineMoves(x,y,piece,[
+        [0,1],
+        [0,-1]
+    ]);
+}
+
+function queenMoves(x,y,piece){
+
+    return lineMoves(x,y,piece,[
+        [1,0],[-1,0],[0,1],[0,-1],
+        [1,1],[-1,-1],[1,-1],[-1,1]
+    ]);
+}
+
+function lineMoves(x,y,piece,directions){
+
+    const moves = [];
+
+    directions.forEach(dir=>{
+
+        let nx = x + dir[0];
+        let ny = y + dir[1];
+
+        while(inBounds(nx,ny)){
+
+            const target = board[ny][nx];
+
+            if(!target){
+
+                moves.push({x:nx,y:ny});
+
+            }else{
+
+                if(target.color!==piece.color){
+                    moves.push({x:nx,y:ny});
+                }
+
+                break;
+            }
+
+            nx += dir[0];
+            ny += dir[1];
+        }
+    });
+
+    return moves;
+}
+
+function movePiece(fromX,fromY,toX,toY,move){
+
+    const piece = board[fromY][fromX];
+
+    const target = board[toY][toX];
+
+    // Carta Pão com Pasta
+    if(activeCard &&
+       activeCard.name==="Pão com Pasta"){
+
+        if(piece.type!=="tia"){
+            showMessage("Use a Tia da Cantina!");
+            return;
+        }
+
+        if(target){
+            showMessage("Com essa carta não pode capturar!");
+            return;
+        }
+
+        if(!piece.extraMove){
+
+            piece.extraMove = true;
+
+            board[toY][toX] = piece;
+            board[fromY][fromX] = null;
+
+            selectedPiece = {x:toX,y:toY};
+            validMoves = getValidMoves(toX,toY,piece);
+
+            renderBoard();
+
+            showMessage("Tia da Cantina pode jogar novamente!");
+
+            return;
+
+        }else{
+
+            piece.extraMove = false;
+
+            removeActiveCard();
+        }
+    }
+
+    if(target){
+
+        scores[currentPlayer] += target.value;
+
+        inventories[currentPlayer]
+            .push(randomCard());
+
+        if(target.value===100){
+            captured100[currentPlayer]++;
+        }
+
+        checkVictory();
+    }
+
+    board[toY][toX] = piece;
+    board[fromY][fromX] = null;
+
+    if(activeCard &&
+       activeCard.name==="Estudar até o MB"){
+        removeActiveCard();
+    }
+
+    selectedPiece = null;
+    validMoves = [];
+
+    if(!gameOver){
+        endTurn();
+    }
+
+    renderBoard();
+}
+
+function removeActiveCard(){
+
+    inventories[currentPlayer]
+        .splice(activeCard.index,1);
+
+    activeCard = null;
+}
+
+function endTurn(){
+
+    currentPlayer =
+        currentPlayer==="red" ? "blue" : "red";
+}
+
+function randomCard(){
+
+    return CARD_TYPES[
+        Math.floor(Math.random()*CARD_TYPES.length)
+    ];
+}
+
+function checkVictory(){
+
+    if(captured100.red >= 2){
+
+        showMessage("🏆 Vitória do Jogador Vermelho!");
+        gameOver = true;
+    }
+
+    if(captured100.blue >= 2){
+
+        showMessage("🏆 Vitória do Jogador Azul!");
+        gameOver = true;
+    }
+}
+
+function showMessage(text){
+
+    document.getElementById("message").innerText = text;
+}
+
+function inBounds(x,y){
+
+    return x>=0 &&
+           x<SIZE &&
+           y>=0 &&
+           y<SIZE;
+}
+
+function restartGame(){
+
+    gameOver = false;
+
+    currentPlayer = "red";
+
+    scores = {
+        red:0,
+        blue:0
+    };
+
+    captured100 = {
+        red:0,
+        blue:0
+    };
+
+    inventories = {
+        red:[],
+        blue:[]
+    };
+
+    selectedPiece = null;
+    validMoves = [];
+    activeCard = null;
+
+    createEmptyBoard();
+    placeInitialPieces();
+    renderBoard();
+
+    showMessage("");
+}
+
+restartGame();
+
+</script>
+
+</body>
 </html>
