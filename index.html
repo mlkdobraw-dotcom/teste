@@ -347,6 +347,17 @@ function placeInitialPieces(){
 
     for(let x=0;x<10;x++){
         board[1][x] = createPiece("aluno","blue");
+        board[0][0] = createPiece ("substituto", "blue");
+        board[0][1] = createPiece ("professor", "blue");
+        board[0][2] = createPiece ("diretor", "blue");
+        board[0][3] = createPiece ("diretor", "blue");
+        board[0][4] = createPiece ("tia", "blue");
+        board[0][5] = createPiece ("moco", "blue");
+        board[0][6] = createPiece ("diretor", "blue");
+        board[0][7] = createPiece ("diretor", "blue");
+        board[0][8] = createPiece ("professor", "blue");
+        board[0][9] = createPiece ("substituto", "blue");
+        
     }
 
     // VERMELHO (base)
@@ -367,6 +378,16 @@ function placeInitialPieces(){
 
     for(let x=0;x<10;x++){
         board[8][x] = createPiece("aluno","red");
+        board[9][0] = createPiece ("substituto", "red");
+        board[9][1] = createPiece ("professor", "red");
+        board[9][2] = createPiece ("diretor", "red");
+        board[9][3] = createPiece ("diretor", "red");
+        board[9][4] = createPiece ("moco", "red");
+        board[9][5] = createPiece ("tia", "red");
+        board[9][6] = createPiece ("diretor", "red");
+        board[9][7] = createPiece ("diretor", "red");
+        board[9][8] = createPiece ("professor", "red");
+        board[9][9] = createPiece ("substituto", "red");
     }
 }
 
@@ -661,7 +682,9 @@ function professorMoves(x,y,piece){
 
     const positions = [
         {x,y:y+3},
-        {x,y:y-3}
+        {x,y:y-3},
+        {y,x:x+3},
+        {y,x:x-3}
     ];
 
     positions.forEach(p=>{
